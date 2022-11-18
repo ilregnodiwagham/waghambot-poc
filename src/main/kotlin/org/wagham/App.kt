@@ -12,6 +12,8 @@ import dev.kord.gateway.Intent
 import dev.kord.gateway.PrivilegedIntent
 import dev.kord.rest.builder.interaction.int
 import dev.kord.rest.builder.interaction.string
+import dev.kord.rest.builder.message.EmbedBuilder
+import dev.kord.rest.builder.message.modify.embed
 
 
 @OptIn(PrivilegedIntent::class)
@@ -47,11 +49,16 @@ suspend fun main() {
         val response = interaction.deferPublicResponse()
         val command = interaction.command
         val currentGuild = cache.getGuild(interaction.guildId)
-        val responseMsg = when (interaction.invokedCommandName) {
+        val responseEmbed = when (interaction.invokedCommandName) {
             "sum" -> {
                 val first = command.integers["first_number"]!! // it's required so it's never null
                 val second = command.integers["second_number"]!!
-                "$first + $second = ${first + second}"
+
+                val builder = EmbedBuilder()
+                builder.title = "Ruoli dell'utente"
+                builder.description = "$first + $second = ${first + second}"
+                builder
+
             }
             "get_roles" -> {
                 val roleNames = interaction.data.member.value
@@ -59,12 +66,26 @@ suspend fun main() {
                     ?.map {
                         currentGuild.getRole(it).name
                     } ?: listOf()
-                roleNames.joinToString { it }
+
+                val builder = EmbedBuilder()
+                builder.title = "Ruoli dell'utente"
+                builder.description = roleNames.joinToString { it }
+                builder
             }
-            else -> "Invalid command"
+            else -> {
+                val builder = EmbedBuilder()
+                builder.title = "Errore"
+                builder.description = "Comando non valido"
+                builder
+            }
         }
 
-        response.respond { content = responseMsg }
+        response.respond {
+            embed {
+                title = responseEmbed.title
+                description = responseEmbed.description
+            }
+        }
     }
 
     kord.login {

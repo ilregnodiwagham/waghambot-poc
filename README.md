@@ -8,7 +8,7 @@ based on Kotlin 1.7 and on the [kord library](https://github.com/kordlib/kord)
 The bot must be able to:<br>
 
 * [X] Send multiple slash commands
-* [ ] Send embed messages
+* [X] Send embed messages
 * [ ] Edit messages
 * [X] Read roles
 * [ ] Set roles
