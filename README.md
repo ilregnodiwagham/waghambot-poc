@@ -7,10 +7,11 @@ based on Kotlin 1.7 and on the [kord library](https://github.com/kordlib/kord)
 
 The bot must be able to:<br>
 
-* [ ] Send multiple slash commands
+* [X] Send multiple slash commands
 * [ ] Send embed messages
 * [ ] Edit messages
-* [ ] Read and set roles
+* [X] Read roles
+* [ ] Set roles
 * [ ] Add reactions
 * [ ] List users from a Guild
 * [ ] Use Buttons, Selectors and Modals
