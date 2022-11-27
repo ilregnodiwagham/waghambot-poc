@@ -1,8 +1,10 @@
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
+import dev.kord.core.behavior.edit
 import dev.kord.core.behavior.interaction.response.edit
 import dev.kord.core.behavior.interaction.response.respond
+import dev.kord.core.entity.component.UnknownComponent
 import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
 import dev.kord.core.event.interaction.GuildChatInputCommandInteractionCreateEvent
 import dev.kord.core.event.interaction.SelectMenuInteractionCreateEvent
@@ -14,6 +16,8 @@ import dev.kord.rest.builder.interaction.int
 import dev.kord.rest.builder.message.modify.InteractionResponseModifyBuilder
 import dev.kord.rest.builder.message.modify.actionRow
 import dev.kord.rest.builder.message.modify.embed
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 
 
@@ -21,10 +25,16 @@ import kotlinx.coroutines.flow.toList
 suspend fun main() {
     val kord = Kord(System.getenv("DISCORD_TOKEN"))
     val cache = CacheEntitySupplier(kord)
+    val roleMap = mutableMapOf<Snowflake, String>()
 
     kord.createGlobalChatInputCommand(
         "get_roles",
-        "A slash command that sums two numbers"
+        "A slash command that edit roles"
+    )
+
+    kord.createGlobalChatInputCommand(
+        "lol_button",
+        "A slash command that doesn't do anything"
     )
 
     kord.createGuildChatInputCommand(
@@ -48,10 +58,53 @@ suspend fun main() {
 
     kord.on<SelectMenuInteractionCreateEvent> {
         val response = interaction.deferPublicMessageUpdate()
+        roleMap[interaction.message.id] = interaction.values.first()
         response.edit {
             embed {
                 title = "Ho editato il messaggio"
                 description = "Il ruolo selezionato è: ${interaction.values.joinToString { it }}"
+            }
+        }
+    }
+
+    kord.on<ButtonInteractionCreateEvent> {
+        val response = interaction.deferPublicMessageUpdate()
+        val role = roleMap[interaction.message.id]
+        if (role == null) {
+            response.edit {
+                embed {
+                    title = "Non hai selezionato alcun ruolo"
+                    description = "Fuck you!"
+                }
+            }
+        } else {
+            val realRole = cache.roles.first{ it.name == role }
+            val currentRoles = interaction.data.member.value?.roles?.toMutableSet() ?: mutableSetOf()
+            val memberData = interaction.data.member.value!!
+            if (currentRoles.firstOrNull{ it == realRole.id } != null) {
+                response.edit {
+                cache.getMember(memberData.guildId, memberData.userId)
+                    .edit {
+                        roles = currentRoles.apply { remove( realRole.id ) }
+                    }
+                    embed {
+                        title = "Ti è stato tolto un ruolo"
+                        description = role
+                    }
+                    components = mutableListOf()
+                }
+            } else {
+                cache.getMember(memberData.guildId, memberData.userId)
+                    .edit {
+                        roles = currentRoles.apply { add( realRole.id ) }
+                    }
+                response.edit {
+                    embed {
+                        title = "Ti è stato aggiunto un ruolo"
+                        description = role
+                    }
+                    components = mutableListOf()
+                }
             }
         }
     }
@@ -95,6 +148,8 @@ suspend fun main() {
                                 }
                             }
                         }
+                    }
+                    actionRow {
                         interactionButton(ButtonStyle.Primary, "guildRolesButton") {
                             label = "Toggle"
                         }
@@ -103,6 +158,20 @@ suspend fun main() {
                 ret
 
             }
+            "lol_button" -> {
+                val ret: InteractionResponseModifyBuilder.() -> Unit = {
+                    embed {
+                        title = "This is a button"
+                    }
+                    actionRow {
+                        interactionButton(ButtonStyle.Primary, "guildRolesButton") {
+                            label = "Button"
+                        }
+                    }
+                }
+                ret
+            }
+
             else -> {
                 val ret: InteractionResponseModifyBuilder.() -> Unit = {
                     embed {

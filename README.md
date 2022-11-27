@@ -11,7 +11,7 @@ The bot must be able to:<br>
 * [X] Send embed messages
 * [X] Edit messages
 * [X] Read roles
-* [ ] Set roles
+* [X] Set roles
 * [ ] Add reactions
 * [ ] List users from a Guild
 * [ ] Use Buttons, Selectors and Modals
