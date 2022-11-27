@@ -1,19 +1,20 @@
+import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
+import dev.kord.core.behavior.interaction.response.edit
 import dev.kord.core.behavior.interaction.response.respond
-import dev.kord.core.entity.Guild
-import dev.kord.core.event.interaction.GlobalApplicationCommandInteractionCreateEvent
-import dev.kord.core.event.interaction.GlobalChatInputCommandInteractionCreateEvent
+import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
 import dev.kord.core.event.interaction.GuildChatInputCommandInteractionCreateEvent
-import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.core.event.interaction.SelectMenuInteractionCreateEvent
 import dev.kord.core.on
 import dev.kord.core.supplier.CacheEntitySupplier
 import dev.kord.gateway.Intent
 import dev.kord.gateway.PrivilegedIntent
 import dev.kord.rest.builder.interaction.int
-import dev.kord.rest.builder.interaction.string
-import dev.kord.rest.builder.message.EmbedBuilder
+import dev.kord.rest.builder.message.modify.InteractionResponseModifyBuilder
+import dev.kord.rest.builder.message.modify.actionRow
 import dev.kord.rest.builder.message.modify.embed
+import kotlinx.coroutines.flow.toList
 
 
 @OptIn(PrivilegedIntent::class)
@@ -45,47 +46,75 @@ suspend fun main() {
         }
     }
 
+    kord.on<SelectMenuInteractionCreateEvent> {
+        val response = interaction.deferPublicMessageUpdate()
+        response.edit {
+            embed {
+                title = "Ho editato il messaggio"
+                description = "Il ruolo selezionato è: ${interaction.values.joinToString { it }}"
+            }
+        }
+    }
+
     kord.on<GuildChatInputCommandInteractionCreateEvent> {
         val response = interaction.deferPublicResponse()
         val command = interaction.command
-        val currentGuild = cache.getGuild(interaction.guildId)
-        val responseEmbed = when (interaction.invokedCommandName) {
+        val responseBuilder = when (interaction.invokedCommandName) {
             "sum" -> {
                 val first = command.integers["first_number"]!! // it's required so it's never null
                 val second = command.integers["second_number"]!!
 
-                val builder = EmbedBuilder()
-                builder.title = "Ruoli dell'utente"
-                builder.description = "$first + $second = ${first + second}"
-                builder
+                val ret: InteractionResponseModifyBuilder.() -> Unit =  {
+                    embed {
+                        title = "You called sum"
+                        description = "$first + $second = ${first + second}"
+                    }
+                }
+                ret
 
             }
             "get_roles" -> {
                 val roleNames = interaction.data.member.value
                     ?.roles
-                    ?.map {
-                        currentGuild.getRole(it).name
+                    ?.mapNotNull {
+                        cache.getRole(it)?.name
                     } ?: listOf()
 
-                val builder = EmbedBuilder()
-                builder.title = "Ruoli dell'utente"
-                builder.description = roleNames.joinToString { it }
-                builder
+                val guildRoles = cache.getGuild(interaction.guildId).roles.toList()
+
+                val ret: InteractionResponseModifyBuilder.() -> Unit = {
+                    embed {
+                        title = "You called roles"
+                        description = roleNames.joinToString { it }
+                    }
+                    actionRow {
+                        selectMenu("guildRoles") {
+                            guildRoles.map {
+                                option(it.name, it.name) {
+                                    description = it.name
+                                }
+                            }
+                        }
+                        interactionButton(ButtonStyle.Primary, "guildRolesButton") {
+                            label = "Toggle"
+                        }
+                    }
+                }
+                ret
+
             }
             else -> {
-                val builder = EmbedBuilder()
-                builder.title = "Errore"
-                builder.description = "Comando non valido"
-                builder
+                val ret: InteractionResponseModifyBuilder.() -> Unit = {
+                    embed {
+                        title = "Error"
+                        description = "Command does not exists"
+                    }
+                }
+                ret
             }
         }
 
-        response.respond {
-            embed {
-                title = responseEmbed.title
-                description = responseEmbed.description
-            }
-        }
+        response.respond(responseBuilder)
     }
 
     kord.login {

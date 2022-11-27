@@ -9,7 +9,7 @@ The bot must be able to:<br>
 
 * [X] Send multiple slash commands
 * [X] Send embed messages
-* [ ] Edit messages
+* [X] Edit messages
 * [X] Read roles
 * [ ] Set roles
 * [ ] Add reactions
