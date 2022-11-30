@@ -4,21 +4,22 @@ import dev.kord.core.Kord
 import dev.kord.core.behavior.edit
 import dev.kord.core.behavior.interaction.response.edit
 import dev.kord.core.behavior.interaction.response.respond
+import dev.kord.core.entity.Member
 import dev.kord.core.entity.component.UnknownComponent
 import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
 import dev.kord.core.event.interaction.GuildChatInputCommandInteractionCreateEvent
 import dev.kord.core.event.interaction.SelectMenuInteractionCreateEvent
+import dev.kord.core.event.message.ReactionAddEvent
 import dev.kord.core.on
 import dev.kord.core.supplier.CacheEntitySupplier
 import dev.kord.gateway.Intent
 import dev.kord.gateway.PrivilegedIntent
 import dev.kord.rest.builder.interaction.int
+import dev.kord.rest.builder.message.EmbedBuilder
 import dev.kord.rest.builder.message.modify.InteractionResponseModifyBuilder
 import dev.kord.rest.builder.message.modify.actionRow
 import dev.kord.rest.builder.message.modify.embed
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.*
 
 
 @OptIn(PrivilegedIntent::class)
@@ -31,6 +32,12 @@ suspend fun main() {
         "get_roles",
         "A slash command that edit roles"
     )
+
+    kord.createGlobalChatInputCommand(
+        "get_users",
+        "A slash command that gets all the users with their roles"
+    )
+
 
     kord.createGlobalChatInputCommand(
         "lol_button",
@@ -65,6 +72,10 @@ suspend fun main() {
                 description = "Il ruolo selezionato è: ${interaction.values.joinToString { it }}"
             }
         }
+    }
+
+    kord.on<ReactionAddEvent> {
+        message.addReaction(emoji)
     }
 
     kord.on<ButtonInteractionCreateEvent> {
@@ -125,6 +136,23 @@ suspend fun main() {
                 }
                 ret
 
+            }
+            "get_users" -> {
+                val guild = cache.getGuild(interaction.guildId)
+                val members = guild.members.filter { !it.isBot }.fold(mapOf<String, String>()) { acc, it -> acc + (it.displayName to it.roles.map { it.name }.toList().joinToString { r -> r })}
+                val ret: InteractionResponseModifyBuilder.() -> Unit = {
+                    embed {
+                        title = "Utenti del server"
+                        description = "Unitevi!"
+                        members.onEach { m ->
+                            field {
+                                name = m.key
+                                value = if (m.value.length >0 ) m.value else "Nessuno"
+                            }
+                        }
+                    }
+                }
+                ret
             }
             "get_roles" -> {
                 val roleNames = interaction.data.member.value
