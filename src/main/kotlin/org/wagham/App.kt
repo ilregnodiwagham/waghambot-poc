@@ -1,13 +1,18 @@
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.Snowflake
+import dev.kord.common.entity.TextInputStyle
 import dev.kord.core.Kord
 import dev.kord.core.behavior.edit
+import dev.kord.core.behavior.interaction.modal
+import dev.kord.core.behavior.interaction.respondPublic
+import dev.kord.core.behavior.interaction.response.createPublicFollowup
 import dev.kord.core.behavior.interaction.response.edit
 import dev.kord.core.behavior.interaction.response.respond
 import dev.kord.core.entity.Member
 import dev.kord.core.entity.component.UnknownComponent
 import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
 import dev.kord.core.event.interaction.GuildChatInputCommandInteractionCreateEvent
+import dev.kord.core.event.interaction.ModalSubmitInteractionCreateEvent
 import dev.kord.core.event.interaction.SelectMenuInteractionCreateEvent
 import dev.kord.core.event.message.ReactionAddEvent
 import dev.kord.core.on
@@ -38,6 +43,10 @@ suspend fun main() {
         "A slash command that gets all the users with their roles"
     )
 
+    kord.createGlobalChatInputCommand(
+        "show_modal",
+        "A slash command that Shows a modal"
+    )
 
     kord.createGlobalChatInputCommand(
         "lol_button",
@@ -76,6 +85,15 @@ suspend fun main() {
 
     kord.on<ReactionAddEvent> {
         message.addReaction(emoji)
+    }
+
+    kord.on<ModalSubmitInteractionCreateEvent> {
+        val response = interaction.deferPublicResponse()
+        response.respond {
+            embed {
+                title = interaction.textInputs["testIDOfText"]?.value ?: "No"
+            }
+        }
     }
 
     kord.on<ButtonInteractionCreateEvent> {
@@ -121,10 +139,10 @@ suspend fun main() {
     }
 
     kord.on<GuildChatInputCommandInteractionCreateEvent> {
-        val response = interaction.deferPublicResponse()
         val command = interaction.command
-        val responseBuilder = when (interaction.invokedCommandName) {
+        when (interaction.invokedCommandName) {
             "sum" -> {
+                val response = interaction.deferPublicResponse()
                 val first = command.integers["first_number"]!! // it's required so it's never null
                 val second = command.integers["second_number"]!!
 
@@ -134,10 +152,21 @@ suspend fun main() {
                         description = "$first + $second = ${first + second}"
                     }
                 }
-                ret
+                response.respond(ret)
 
             }
+            "show_modal" -> {
+                interaction.modal("testModal", "testModalSuperUniqueID") {
+                    title = "Does it work?"
+                    actionRow {
+                        textInput(TextInputStyle.Paragraph, "testIDOfText", label = "testText") {
+                            placeholder = "ciao"
+                        }
+                    }
+                }
+            }
             "get_users" -> {
+                val response = interaction.deferPublicResponse()
                 val guild = cache.getGuild(interaction.guildId)
                 val members = guild.members.filter { !it.isBot }.fold(mapOf<String, String>()) { acc, it -> acc + (it.displayName to it.roles.map { it.name }.toList().joinToString { r -> r })}
                 val ret: InteractionResponseModifyBuilder.() -> Unit = {
@@ -147,14 +176,15 @@ suspend fun main() {
                         members.onEach { m ->
                             field {
                                 name = m.key
-                                value = if (m.value.length >0 ) m.value else "Nessuno"
+                                value = if (m.value.isNotEmpty()) m.value else "Nessuno"
                             }
                         }
                     }
                 }
-                ret
+                response.respond(ret)
             }
             "get_roles" -> {
+                val response = interaction.deferPublicResponse()
                 val roleNames = interaction.data.member.value
                     ?.roles
                     ?.mapNotNull {
@@ -183,10 +213,11 @@ suspend fun main() {
                         }
                     }
                 }
-                ret
+                response.respond(ret)
 
             }
             "lol_button" -> {
+                val response = interaction.deferPublicResponse()
                 val ret: InteractionResponseModifyBuilder.() -> Unit = {
                     embed {
                         title = "This is a button"
@@ -197,21 +228,20 @@ suspend fun main() {
                         }
                     }
                 }
-                ret
+                response.respond(ret)
             }
 
             else -> {
+                val response = interaction.deferPublicResponse()
                 val ret: InteractionResponseModifyBuilder.() -> Unit = {
                     embed {
                         title = "Error"
                         description = "Command does not exists"
                     }
                 }
-                ret
+                response.respond(ret)
             }
         }
-
-        response.respond(responseBuilder)
     }
 
     kord.login {
