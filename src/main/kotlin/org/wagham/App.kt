@@ -1,7 +1,11 @@
+
 import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.Snowflake
 import dev.kord.common.entity.TextInputStyle
 import dev.kord.core.Kord
+import dev.kord.core.behavior.channel.MessageChannelBehavior
+import dev.kord.core.behavior.channel.asChannelOf
+import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.edit
 import dev.kord.core.behavior.interaction.modal
 import dev.kord.core.behavior.interaction.respondPublic
@@ -9,6 +13,7 @@ import dev.kord.core.behavior.interaction.response.createPublicFollowup
 import dev.kord.core.behavior.interaction.response.edit
 import dev.kord.core.behavior.interaction.response.respond
 import dev.kord.core.entity.Member
+import dev.kord.core.entity.channel.MessageChannel
 import dev.kord.core.entity.component.UnknownComponent
 import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
 import dev.kord.core.event.interaction.GuildChatInputCommandInteractionCreateEvent
@@ -25,7 +30,14 @@ import dev.kord.rest.builder.message.modify.InteractionResponseModifyBuilder
 import dev.kord.rest.builder.message.modify.actionRow
 import dev.kord.rest.builder.message.modify.embed
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.runBlocking
+import java.time.LocalDate
+import java.util.*
+import kotlin.concurrent.schedule
 
+suspend fun sendMessage(cache: CacheEntitySupplier, channelId: String) {
+
+}
 
 @OptIn(PrivilegedIntent::class)
 suspend fun main() {
@@ -243,6 +255,17 @@ suspend fun main() {
             }
         }
     }
+
+//    Timer("testTimer").schedule(
+//        Date(System.currentTimeMillis() + 10000),
+//        5000
+//    ) {
+//        runBlocking {
+//            cache.getChannel(Snowflake(868027238975680552)).asChannelOf<MessageChannel>().createMessage {
+//                content = "Test"
+//            }
+//        }
+//    }
 
     kord.login {
         intents += Intent.GuildMembers
