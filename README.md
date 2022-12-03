@@ -17,4 +17,4 @@ The bot must be able to:<br>
 * [X] Use Buttons, Selectors and Modals
 * [X] Execute tasks at a scheduled time
 * [X] Send private messages to the users
-* [ ] Run on Docker
+* [X] Run on Docker
