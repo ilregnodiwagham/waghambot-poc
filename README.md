@@ -16,5 +16,5 @@ The bot must be able to:<br>
 * [X] List users from a Guild
 * [X] Use Buttons, Selectors and Modals
 * [X] Execute tasks at a scheduled time
-* [ ] Send private messages to the users
+* [X] Send private messages to the users
 * [ ] Run on Docker

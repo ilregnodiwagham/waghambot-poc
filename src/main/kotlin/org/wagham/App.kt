@@ -3,18 +3,11 @@ import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.Snowflake
 import dev.kord.common.entity.TextInputStyle
 import dev.kord.core.Kord
-import dev.kord.core.behavior.channel.MessageChannelBehavior
-import dev.kord.core.behavior.channel.asChannelOf
 import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.behavior.edit
 import dev.kord.core.behavior.interaction.modal
-import dev.kord.core.behavior.interaction.respondPublic
-import dev.kord.core.behavior.interaction.response.createPublicFollowup
 import dev.kord.core.behavior.interaction.response.edit
 import dev.kord.core.behavior.interaction.response.respond
-import dev.kord.core.entity.Member
-import dev.kord.core.entity.channel.MessageChannel
-import dev.kord.core.entity.component.UnknownComponent
 import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
 import dev.kord.core.event.interaction.GuildChatInputCommandInteractionCreateEvent
 import dev.kord.core.event.interaction.ModalSubmitInteractionCreateEvent
@@ -25,19 +18,11 @@ import dev.kord.core.supplier.CacheEntitySupplier
 import dev.kord.gateway.Intent
 import dev.kord.gateway.PrivilegedIntent
 import dev.kord.rest.builder.interaction.int
-import dev.kord.rest.builder.message.EmbedBuilder
 import dev.kord.rest.builder.message.modify.InteractionResponseModifyBuilder
 import dev.kord.rest.builder.message.modify.actionRow
 import dev.kord.rest.builder.message.modify.embed
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
-import java.time.LocalDate
 import java.util.*
-import kotlin.concurrent.schedule
-
-suspend fun sendMessage(cache: CacheEntitySupplier, channelId: String) {
-
-}
 
 @OptIn(PrivilegedIntent::class)
 suspend fun main() {
@@ -58,6 +43,11 @@ suspend fun main() {
     kord.createGlobalChatInputCommand(
         "show_modal",
         "A slash command that Shows a modal"
+    )
+
+    kord.createGlobalChatInputCommand(
+        "annoy_me",
+        "A slash command that sends you a message"
     )
 
     kord.createGlobalChatInputCommand(
@@ -176,6 +166,16 @@ suspend fun main() {
                         }
                     }
                 }
+            }
+            "annoy_me" -> {
+                val response = interaction.deferPublicResponse()
+                interaction.data.member.value?.let {
+                    cache.getMember(interaction.guildId, it.userId)
+                        .asUser().getDmChannel().createMessage {
+                            content = "Fuck you!"
+                        }
+                }
+                response.respond { content = "ok" }
             }
             "get_users" -> {
                 val response = interaction.deferPublicResponse()
